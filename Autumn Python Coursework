@@ -1,0 +1,237 @@
+import pandas
+import matplotlib
+import statsmodels
+import tkinter
+
+import pandas as pd
+
+from tkinter import filedialog
+from tkinter import *
+
+root = Tk()
+dataset =  filedialog.askopenfilename(initialdir = "/", title = "Select file", filetypes = (("Text files", "*.txt"), ("all files", "*.*")))
+print (dataset)
+
+import matplotlib.pyplot as plt
+plt.hist(dataset['bwght'])
+plt.show()
+
+print(dataset['bwght'].mean())
+print(dataset['bwght'].max())
+print(dataset['bwght'].min())
+print(dataset['bwght'].std())
+
+import statsmodels.formula.api as smf
+model = smf.ols(formula='bwght ~ age + educ + nprevist + smoker', data=dataset)
+results = model.fit()
+print(results.summary())
+
+
+# load dataset
+dataset = pd.read_csv("file.csv")
+
+# 1a average, minimum, maximum, standard deviation of birthweight
+bwght_mean = dataset["bwght"].mean()
+bwght_max = dataset["bwght"].max()
+bwght_min = dataset["bwght"].min()
+bwght_std = dataset["bwght"].std()
+
+# 1a average, minimum, maximum, standard deviation of education
+educ_mean = dataset["educ"].mean()
+educ_max = dataset["educ"].max()
+educ_min = dataset["educ"].min()
+educ_std = dataset["educ"].std()
+
+## 1a average, minimum, maximum, standard deviation of unmarried
+unmarried_mean = dataset["unmarried"].mean()
+unmarried_max = dataset["unmarried"].max()
+unmarried_min = dataset["unmarried"].min()
+unmarried_std = dataset["unmarried"].std()
+
+# 1b Histogram of child birthweight
+dataset["bwght"].hist()
+
+# 1c Amount of Observations in the data set
+num_observations = dataset.size
+
+import pandas as pd
+
+#2a
+marriedmothers = dataset[dataset['unmarried'] == 0]
+unmarriedmothers = dataset[dataset['unmarried'] == 1]
+nprevistun = unmarriedmothers.mean()
+nprevistmar = marriedmothers.mean()
+
+#2B
+age_under_20 = 0
+age_20 = 0
+age_30 = 0
+age_40 = 0
+
+agegroup = [None] * len(dataset['age'])
+
+for i in range(len(dataset['age'])):
+    if(dataset['age'][i] < 20):
+        age_under_20 += 1
+        agegroup[i] = 1
+    elif(dataset['age'][i] >= 20 and dataset['age'][i] <= 29):
+        age_20 += 1
+        agegroup[i] = 2
+    elif(dataset['age'][i] >= 30 and dataset['age'][i] <= 39):
+        age_30 += 1
+        agegroup[i] = 3
+    elif(dataset['age'][i] >= 40):
+        age_40 += 1
+        agegroup[i] = 4
+
+num_30_older = age_30 + age_40
+
+dataset["agegroup"] = agegroup
+counts = dataset.groupby(["unmarried", "agegroup"]).size().reset_index(name="counts")
+
+import matplotlib.pyplot as plt
+plt.bar(counts["agegroup"], counts["counts"], color=["darkblue","red"])
+plt.xlabel("Age group")
+plt.ylabel("Counts")
+plt.title("Relationship between maritial status and age group")
+plt.legend(["Married", "Unmarried"])
+plt.show()
+
+#3B
+from scipy.stats import pearsonr
+corr_age_marital_status, _ = pearsonr(dataset["age"], dataset["unmarried"])
+print(f"The PMCC between age and marital status is {corr_age_marital_status} meaning that there's an inverse relationship between the two variables.")
+
+import pandas as pd
+import numpy as np
+from sklearn.linear_model import LinearRegression
+from sklearn.metrics import r2_score
+
+x = dataset['bwght']
+y = dataset['educ']
+corr = np.corrcoef(x,y)[0][1]
+
+reg = LinearRegression().fit(x.values.reshape(-1,1), y)
+r2 = r2_score(y, reg.predict(x.values.reshape(-1,1)))
+
+model = LinearRegression().fit(dataset[['age','educ']], dataset['bwght'])
+coef = model.coef_
+
+##4b
+# The estimated coefficient from the summary is 7.324 meaning that for an increase
+# in the year there is a predicted 7.324 unit (gram) increase in the birth weight
+# If there was a 4 year increase there should be a 29.296 gram increase in the
+# birth weight
+
+##4c
+# The estimated coefficient from the summary is 7.218 meaning that for an increase
+# in the year there is a predicted 7.218 unit (gram) increase in the birth weight
+# If there was a 5 year increase there should be a 36.09 gram increase in the
+# birth weight
+
+
+import numpy as np
+from scipy import stats
+from sklearn import linear_model
+
+lbwght = np.log(dataset['bwght'])
+x = dataset['educ']
+y = lbwght
+
+correlation, _ = stats.pearsonr(x, y)
+print(f'The correlation between x and y is {correlation}')
+
+regressiontwo = linear_model.LinearRegression()
+regressiontwo.fit(x.values.reshape(-1,1), y)
+
+log_model = linear_model.LinearRegression()
+log_model.fit(dataset[['age', 'educ']], lbwght)
+
+print(f'Coefficients: {log_model.coef_}')
+print(f'Intercept: {log_model.intercept_}')
+
+# The estimated coefficient from the summary is 0.001805 meaning that for an increase
+# in the year there is a predicted 0.001805 unit (gram) increase in the birth weight
+# If there was a 4 year increase there should be a 0.00722 gram increase in the
+# birth weight since the model takes the natural log of the birth weight
+# the observed changes behave differently.
+
+#5d
+# The observed age of the updated model that takes the natural log is
+# significant at the 5% level
+
+##6
+
+dataset['agesq'] = dataset['age'].apply(lambda x: x**2)
+
+reg1 = smf.ols(formula='bwght ~ age + educ', data=dataset).fit()
+reg2 = smf.ols(formula='bwght ~ age + educ + agesq', data=dataset).fit()
+
+print(reg1.summary())
+print(reg2.summary())
+
+def obj_fun(agesq):
+    pred = coef[0] + coef[1]*dataset['age'] + coef[2]*dataset['educ'] + coef[3]*agesq
+    return -pred.sum()
+
+result = minimize(obj_fun, x0=0)
+agesq_opt = result.x[0]
+
+##7
+
+import pandas as pd
+from sklearn.linear_model import LinearRegression
+from sklearn.metrics import r2_score
+import matplotlib.pyplot as plt
+
+# Load the dataset into a pandas dataframe
+dataset = pd.read_csv("path/to/dataset.csv")
+
+# Create the model with the predictor variables age, educ, and nprevist
+bw_model_nprevist = LinearRegression()
+X = dataset[['age', 'educ', 'nprevist']]
+y = dataset['bwght']
+bw_model_nprevist.fit(X, y)
+
+# Print the coefficients of the model
+print(bw_model_nprevist.coef_)
+
+# Print the R-squared value of the model
+r2 = r2_score(y, bw_model_nprevist.predict(X))
+print(r2)
+
+# Plot the residuals
+residuals = y - bw_model_nprevist.predict(X)
+plt.scatter(bw_model_nprevist.predict(X), residuals)
+plt.axhline(0, color='black')
+plt.xlabel('Predicted values')
+plt.ylabel('Res')
+##8
+import statsmodels.formula.api as smf
+
+bwight_model = smf.ols(formula='bwght ~ age + educ + nprevist + smoker', data=dataset).fit()
+print(bwight_model.summary())
+
+ec252dat_subset = dataset[dataset['age'] >= 30]
+newmodel_underequalthirthy = smf.ols(formula='bwght ~ age + educ + nprevist + smoker', data=ec252dat_subset).fit()
+print(newmodel_underequalthirthy.summary())
+
+ec252dat_filter = dataset[dataset['age'] < 30]
+newmodel_overthirthy = smf.ols(formula='bwght ~ age + educ + nprevist + smoker', data=ec252dat_filter).fit()
+print(newmodel_overthirthy.summary())
+
+##8d
+import pandas as pd
+import statsmodels.formula.api as smf
+
+# Read in the dataset
+dataset = pd.read_csv("path/to/dataset.csv")
+
+# Create two separate linear regression models
+model1 = smf.ols(formula="bwght ~ age + educ + nprevist + smoker", data=dataset[dataset["age30"] == 1]).fit()
+model2 = smf.ols(formula="bwght ~ age + educ + nprevist + smoker", data=dataset[dataset["age30"] == 0]).fit()
+
+# Perform the homoskedasticity-only Chow test
+from statsmodels.compat import lzip
+name = ['Chow Test']
+test = sms.compare
